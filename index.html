@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LINK ON — 인터랙티브 프로토타입</title>
+<!-- Pretendard (본문 글씨) -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/* Michroma — 숫자(0–9) + 영문(A-Z, a-z)에 적용 */
+@font-face{
+  font-family:'MichromaNum';
+  font-style:normal;font-weight:300;font-display:swap;
+  src:url('fonts/michroma.woff2') format('woff2');
+  unicode-range:U+0030-0039,U+0041-005A,U+0061-007A; /* 0-9, A-Z, a-z */
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+:root{
+  --indigo:#2D3FCC;
+  --indigo-d:#222a8f;
+  --indigo-l:#5B67F8;
+  --blue:#1769FF;
+  --purple:#3730A3;
+  --bg:#f4f5fa;
+  --card:#ffffff;
+  --ink:#15151d;
+  --ink2:#5c5c6b;
+  --ink3:#9b9bac;
+  --line:#ececf1;
+  --chip:#eeeef4;
+  --gold:#F59E0B;
+  --green:#22C55E;
+  --red:#EF4444;
+  --font:'MichromaNum','Pretendard','Pretendard Variable',-apple-system,BlinkMacSystemFont,'Malgun Gothic','Apple SD Gothic Neo','Segoe UI',sans-serif;
+}
+
+body{
+  background:radial-gradient(1200px 700px at 50% -10%,#1a1d3a 0%,#0c0d1c 55%,#08080f 100%);
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  min-height:100vh;gap:18px;padding:24px 0;
+  font-family:var(--font);
+}
+
+/* ── top control bar ── */
+.topbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+.badge{padding:5px 14px;border-radius:20px;font-size:12px;letter-spacing:.3px;font-weight:500}
+.badge-screen{background:rgba(255,255,255,.08);color:rgba(255,255,255,.78)}
+.badge-role{background:rgba(80,100,255,.2);color:#9aacff;transition:all .3s}
+.badge-role.master{background:rgba(150,90,240,.25);color:#cdacff}
+.btn-restart{
+  background:rgba(255,255,255,.06);color:rgba(255,255,255,.55);
+  border:1px solid rgba(255,255,255,.1);border-radius:20px;
+  padding:5px 13px;font-size:12px;cursor:pointer;transition:all .2s;
+}
+.btn-restart:hover{background:rgba(255,255,255,.14);color:#fff}
+
+/* ════════════════ iPhone 17 frame ════════════════ */
+.phone-wrap{position:relative;width:402px;height:874px;flex-shrink:0}
+.iphone-frame{
+  position:absolute;top:-14px;left:-14px;right:-14px;bottom:-14px;
+  border-radius:62px;
+  background:linear-gradient(150deg,#43454a 0%,#2a2b30 10%,#161619 35%,#0e0e11 62%,#1c1d22 84%,#34353b 100%);
+  box-shadow:
+    inset 0 0 0 .5px rgba(255,255,255,.16),
+    inset 0 2px 1px rgba(255,255,255,.1),
+    inset 0 -2px 1px rgba(0,0,0,.6),
+    inset 0 0 0 13px #0a0a0c,
+    0 1px 0 .5px rgba(0,0,0,.9),
+    0 40px 90px rgba(0,0,0,.7),
+    0 70px 160px rgba(0,0,0,.85);
+  z-index:0;pointer-events:none;
+}
+.iphone-frame::before{
+  content:'';position:absolute;left:-3px;top:150px;width:3px;height:34px;
+  background:linear-gradient(to right,#15151a,#34353b);border-radius:2px 0 0 2px;
+  box-shadow:0 52px 0 0 #15151a,inset 1px 0 0 rgba(255,255,255,.08),0 -66px 0 -9px #1a1a1f;
+}
+.iphone-frame::after{
+  content:'';position:absolute;right:-3px;top:185px;width:3px;height:72px;
+  background:linear-gradient(to left,#15151a,#34353b);border-radius:0 2px 2px 0;
+  box-shadow:inset -1px 0 0 rgba(255,255,255,.08);
+}
+
+.phone-screen{position:absolute;inset:0;border-radius:49px;overflow:hidden;background:#000;z-index:1}
+
+/* Dynamic Island */
+.dynamic-island{
+  position:absolute;top:13px;left:50%;transform:translateX(-50%);
+  width:122px;height:35px;background:#000;border-radius:20px;
+  z-index:600;pointer-events:none;box-shadow:0 0 0 1px rgba(255,255,255,.04);
+}
+.dynamic-island::after{
+  content:'';position:absolute;right:11px;top:50%;transform:translateY(-50%);
+  width:9px;height:9px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#1a2535,#05070d 70%);
+  box-shadow:inset 0 0 0 1px rgba(60,90,140,.4);
+}
+
+/* ════════════════ screens ════════════════ */
+.screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden;will-change:transform;background:var(--bg)}
+.screen.active{display:flex}
+
+/* status bar */
+.statusbar{height:54px;flex-shrink:0;display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 7px 34px;font-size:15px;font-weight:600;z-index:50;position:relative}
+.statusbar .time{letter-spacing:.5px}
+.statusbar .sb-icons{display:flex;align-items:center;gap:6px}
+.statusbar.dark{color:#fff}
+.statusbar.light{color:#15151d}
+
+/* scrollable body */
+.body{flex:1;overflow-y:auto;overflow-x:hidden;position:relative}
+.body::-webkit-scrollbar{width:0}
+.pad{padding:0 22px}
+
+/* bottom nav */
+.bottomnav{flex-shrink:0;height:78px;display:flex;align-items:flex-start;padding-top:11px;border-top:1px solid var(--line);background:rgba(255,255,255,.92);backdrop-filter:blur(20px);z-index:40}
+.bottomnav.dark{background:rgba(20,20,40,.5);border-top-color:rgba(255,255,255,.1)}
+.navtab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:var(--ink3);font-size:10px;font-weight:500;transition:color .15s}
+.navtab svg{width:25px;height:25px}
+.navtab.on{color:var(--indigo)}
+.bottomnav.dark .navtab{color:rgba(255,255,255,.45)}
+.bottomnav.dark .navtab.on{color:#fff}
+
+/* ── common ── */
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--ink3);text-transform:uppercase}
+.h1{font-size:27px;font-weight:800;color:var(--ink);line-height:1.25;letter-spacing:-.5px}
+.h2{font-size:19px;font-weight:700;color:var(--ink);letter-spacing:-.3px}
+.sub{font-size:13.5px;color:var(--ink2);line-height:1.55}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:16px;font-family:var(--font);font-weight:700;cursor:pointer;transition:transform .12s,box-shadow .2s,background .2s;font-size:15px}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--indigo);color:#fff;box-shadow:0 8px 22px rgba(45,63,204,.32)}
+.btn-primary:hover{background:var(--indigo-d)}
+.btn-blue{background:var(--blue);color:#fff;box-shadow:0 8px 22px rgba(23,105,255,.32)}
+.btn-blue:hover{filter:brightness(1.05)}
+.btn-ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+.btn-block{width:100%;height:54px}
+
+.chip{padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;white-space:nowrap;background:#fff;color:var(--ink2);border:1.5px solid var(--line);cursor:pointer;transition:all .18s}
+.chip.on{background:var(--purple);color:#fff;border-color:var(--purple)}
+.chiprow{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.chiprow::-webkit-scrollbar{display:none}
+
+.card{background:var(--card);border-radius:20px;border:1px solid var(--line)}
+
+.avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;position:relative}
+.avatar .vbadge{position:absolute;right:-2px;bottom:-2px;width:20px;height:20px;border-radius:50%;background:var(--blue);border:2.5px solid #fff;display:flex;align-items:center;justify-content:center}
+.avatar .vbadge svg{width:10px;height:10px}
+
+.tag{padding:5px 11px;border-radius:13px;background:#f0f0f8;color:var(--indigo);font-size:11.5px;font-weight:600}
+
+/* ── photo fills (Figma 3D character assets) ── */
+.avatar{overflow:visible}
+.pfc{width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:center 30%;display:block}
+.pfr{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;display:block;z-index:0}
+.role-face{overflow:hidden;position:relative;padding:0}
+.role-face .pfr{object-position:center 32%}
+.feat-match{position:relative;z-index:2}
+.fav-photo .av{position:relative;z-index:2}
+.card-avatar{overflow:hidden}
+.card-avatar .pfc{object-position:center 30%}
+.mc-photo::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,rgba(15,15,50,0) 45%,rgba(15,15,50,.5));z-index:0}
+.mc-photo>.mc-match,.mc-photo>.mc-name,.mc-photo>.mc-desc,.mc-photo>.mc-tags{z-index:1}
+
+/* ── transitions ── */
+@keyframes inR{from{transform:translateX(100%)}to{transform:translateX(0)}}
+@keyframes inL{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+@keyframes outL{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+@keyframes outR{from{transform:translateX(0)}to{transform:translateX(100%)}}
+.anim-inR{animation:inR .32s cubic-bezier(.4,0,.2,1) forwards}
+.anim-inL{animation:inL .32s cubic-bezier(.4,0,.2,1) forwards}
+.anim-outL{animation:outL .32s cubic-bezier(.4,0,.2,1) forwards}
+.anim-outR{animation:outR .32s cubic-bezier(.4,0,.2,1) forwards}
+
+/* toast */
+.toast{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:rgba(12,12,32,.95);color:#d6def8;padding:11px 22px;border-radius:24px;font-size:13px;border:1px solid rgba(110,130,255,.3);backdrop-filter:blur(12px);opacity:0;pointer-events:none;transition:opacity .25s;z-index:9999;white-space:nowrap}
+.toast.show{opacity:1}
+
+/* flow dots */
+.flow-dots{display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:402px}
+.dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.16);transition:all .3s}
+.dot.visited{background:rgba(110,130,255,.5)}
+.dot.current{background:#6e82ff;width:18px;border-radius:3px}
+
+/* ════════════ SCREEN-SPECIFIC ════════════ */
+/* S1 splash */
+#s1{background:#0a0a0d;justify-content:flex-start}
+.splash-swoosh{position:absolute;right:-60px;bottom:60px;width:420px;height:420px;opacity:.5;z-index:0}
+.splash-content{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;padding:0 30px;text-align:center}
+.splash-logo{font-size:30px;font-weight:800;letter-spacing:3px;color:#fff;margin-bottom:26px}
+.splash-logo .on{color:#3d6dff}
+.splash-title{font-size:38px;font-weight:800;color:#fff;letter-spacing:-1px}
+.splash-divider{width:40px;height:2px;background:rgba(255,255,255,.3);margin:26px 0}
+.splash-tag{font-size:15px;color:rgba(255,255,255,.6);line-height:1.7}
+.splash-bottom{padding:0 22px 26px;z-index:1}
+.splash-login{text-align:center;margin-top:16px;font-size:13px;color:rgba(255,255,255,.45)}
+.splash-login b{color:#6e8dff;font-weight:600;cursor:pointer}
+
+/* dark onboarding */
+.dark-scr{background:#0c0c12;color:#fff}
+.dark-scr .h1{color:#fff}.dark-scr .eyebrow{color:rgba(255,255,255,.4)}.dark-scr .sub{color:rgba(255,255,255,.55)}
+.progress{display:flex;gap:6px;margin-bottom:24px}
+.progress i{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.14)}
+.progress i.on{background:var(--indigo-l)}
+.skip{position:absolute;top:0;right:0;font-size:14px;color:rgba(255,255,255,.5);cursor:pointer}
+
+/* S2 role cards */
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:8px}
+.role-card{border-radius:22px;padding:18px 16px 20px;cursor:pointer;transition:transform .15s,box-shadow .2s;border:1.5px solid transparent;position:relative}
+.role-card:active{transform:scale(.98)}
+.role-card.master{background:linear-gradient(160deg,#2a2280,#1a1550);border-color:rgba(140,110,255,.35)}
+.role-card.mentee{background:#1a1a22;border-color:rgba(255,255,255,.08)}
+.role-face{width:100%;height:118px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:64px;margin-bottom:14px}
+.role-card.master .role-face{background:linear-gradient(160deg,#4b3fae,#2e2570)}
+.role-card.mentee .role-face{background:linear-gradient(160deg,#2c2c3a,#1d1d28)}
+.role-name{font-size:18px;font-weight:800;color:#fff;margin-bottom:2px}
+.role-name span{font-size:12px;font-weight:500;color:rgba(255,255,255,.5);margin-left:5px}
+.role-desc{font-size:12.5px;color:rgba(255,255,255,.62);line-height:1.5;margin-bottom:12px}
+.role-feat{display:flex;flex-direction:column;gap:7px}
+.role-feat div{display:flex;align-items:center;gap:7px;font-size:11.5px;color:rgba(255,255,255,.72)}
+.role-feat svg{width:13px;height:13px;color:var(--indigo-l);flex-shrink:0}
+
+/* S3 chat onboarding */
+.ob-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:16px;font-size:12px;font-weight:600}
+.ob-row{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.ob-ai{width:34px;height:34px;border-radius:50%;border:1.5px solid rgba(140,110,255,.4);display:flex;align-items:center;justify-content:center;color:var(--indigo-l)}
+.bubble{max-width:80%;padding:13px 16px;border-radius:18px;font-size:14px;line-height:1.55;margin-bottom:14px}
+.bubble.ai{background:#fff;color:var(--ink);border-bottom-left-radius:5px}
+.bubble.me{background:var(--purple);color:#fff;border-bottom-right-radius:5px;margin-left:auto}
+.voice-bubble{background:var(--purple);color:#fff;border-radius:18px;border-bottom-right-radius:5px;padding:14px 18px;margin-left:auto;width:62%;margin-bottom:14px}
+.voice-wave{display:flex;align-items:center;gap:2.5px;height:26px}
+.voice-wave i{width:2.5px;background:rgba(255,255,255,.85);border-radius:2px;animation:wave 1s ease-in-out infinite}
+@keyframes wave{0%,100%{height:25%}50%{height:100%}}
+.voice-time{font-size:11px;color:rgba(255,255,255,.7);margin-top:7px}
+.resume-card{background:#fff;border-radius:18px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.2)}
+.input-bar{flex-shrink:0;padding:12px 18px 22px;display:flex;align-items:center;gap:10px;background:#0c0c12}
+.input-box{flex:1;height:46px;border-radius:24px;background:#1c1c26;display:flex;align-items:center;padding:0 18px;color:rgba(255,255,255,.4);font-size:14px}
+.mic-btn{width:46px;height:46px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;cursor:pointer}
+
+/* S4 recording */
+.rec-status{display:flex;align-items:center;gap:8px;font-size:14px;color:rgba(255,255,255,.85);margin-bottom:22px}
+.rec-dot{width:9px;height:9px;border-radius:50%;background:var(--indigo-l);animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.rec-quote{font-size:25px;font-weight:800;color:#fff;line-height:1.4;letter-spacing:-.5px}
+.rec-quote b{color:var(--indigo-l)}
+.rec-wavebox{background:#15151d;border-radius:18px;height:88px;display:flex;align-items:center;justify-content:center;gap:3px;padding:0 20px;margin:18px 0}
+.rec-wavebox i{width:3px;background:var(--indigo-l);border-radius:3px;animation:wave 1.1s ease-in-out infinite}
+.rec-field{display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.rec-field .k{font-size:13px;color:rgba(255,255,255,.5)}
+.rec-field .v{font-size:14px;font-weight:700;color:#fff;display:flex;align-items:center;gap:7px}
+.rec-field .v svg{width:15px;height:15px;color:var(--green)}
+.rec-mic{width:84px;height:84px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;margin:8px auto;border:5px solid #3a2e15;cursor:pointer;box-shadow:0 0 0 4px rgba(245,158,11,.15)}
+
+/* S5 mentee home */
+.home-top{display:flex;align-items:flex-start;justify-content:space-between;padding-top:4px}
+.greet-sub{font-size:13px;color:var(--ink2)}
+.greet{font-size:24px;font-weight:800;color:var(--ink);margin-top:2px}
+.bell{width:42px;height:42px;border-radius:50%;background:#fff;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer}
+.bell .ndot{position:absolute;top:9px;right:11px;width:8px;height:8px;border-radius:50%;background:var(--blue);border:1.5px solid #fff}
+.searchbar{display:flex;align-items:center;gap:10px;height:50px;border-radius:16px;background:#fff;border:1px solid var(--line);padding:0 16px;color:var(--ink3);font-size:14px;cursor:pointer;margin:16px 0}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+.ai-pill{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:14px;background:#eeeefb;color:var(--indigo);font-size:12px;font-weight:700}
+.feat-card{border-radius:22px;overflow:hidden;background:#fff;border:1px solid var(--line);box-shadow:0 10px 30px rgba(20,20,60,.08)}
+.feat-photo{height:215px;position:relative;display:flex;align-items:flex-start;padding:14px}
+.feat-match{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:16px;background:rgba(255,255,255,.92);color:var(--indigo);font-size:12px;font-weight:800;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.feat-body{padding:16px 18px 18px}
+.feat-name{font-size:20px;font-weight:800;color:var(--ink)}
+.feat-name span{font-size:13px;font-weight:500;color:var(--ink2);margin-left:6px}
+.feat-meta{font-size:13px;color:var(--ink2);margin:5px 0 12px}
+.feat-tags{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:15px}
+.feat-actions{display:flex;gap:10px}
+.feat-actions .btn{flex:1;height:50px;border-radius:14px}
+.carousel-dots{display:flex;gap:6px;justify-content:center;margin-top:14px}
+.carousel-dots i{width:6px;height:6px;border-radius:50%;background:var(--line)}
+.carousel-dots i.on{width:20px;border-radius:3px;background:var(--indigo)}
+.lrow{display:flex;align-items:center;gap:13px;padding:14px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.lrow:last-child{border-bottom:none}
+.lrow .info{flex:1;min-width:0}
+.lrow .nm{font-size:15px;font-weight:700;color:var(--ink)}
+.lrow .nm span{font-size:12px;font-weight:500;color:var(--ink3);margin-left:5px}
+.lrow .ds{font-size:12.5px;color:var(--ink2);margin:3px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lrow .rt{font-size:13px;color:var(--ink2)}
+.lrow .rt b{color:var(--gold)}
+.lrow .chev{color:var(--ink3);flex-shrink:0}
+
+/* S6 master swipe */
+#s6{background:linear-gradient(180deg,#eef0fb,#f4f5fa)}
+.mentee-card{flex:1;margin:8px 22px 0;border-radius:24px;background:#fff;box-shadow:0 14px 44px rgba(30,30,90,.12);overflow:hidden;display:flex;flex-direction:column}
+.mc-photo{flex:1;background:linear-gradient(160deg,#5b67f8,#2d3fcc);position:relative;display:flex;flex-direction:column;justify-content:flex-end;padding:22px;color:#fff;min-height:0}
+.mc-match{position:absolute;top:18px;right:18px;padding:7px 14px;border-radius:16px;background:rgba(255,255,255,.95);color:var(--indigo);font-weight:800;font-size:13px}
+.mc-emoji{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);font-size:96px;opacity:.95}
+.mc-name{font-size:26px;font-weight:800;position:relative}
+.mc-name span{font-size:15px;font-weight:500;opacity:.85;margin-left:7px}
+.mc-desc{font-size:14px;opacity:.92;margin-top:6px;position:relative;line-height:1.5}
+.mc-tags{display:flex;gap:7px;margin-top:13px;position:relative;flex-wrap:wrap}
+.mc-tags span{padding:5px 12px;border-radius:14px;background:rgba(255,255,255,.2);font-size:12px;font-weight:600;backdrop-filter:blur(4px)}
+.swipe-row{display:flex;align-items:center;justify-content:center;gap:24px;padding:20px 0 26px}
+.srb{width:58px;height:58px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.1);transition:transform .15s}
+.srb:active{transform:scale(.9)}
+.srb svg{width:26px;height:26px}
+.srb.big{width:72px;height:72px;background:linear-gradient(135deg,#2d3fcc,#5b67f8);box-shadow:0 8px 26px rgba(45,63,204,.4)}
+.srb.big svg{width:32px;height:32px;color:#fff}
+.srb.x{color:var(--red)}
+.srb.save{color:var(--indigo)}
+
+.phead{padding-top:6px;margin-bottom:16px}
+.cat-hero{border-radius:20px;height:175px;position:relative;display:flex;align-items:flex-end;padding:16px;color:#fff;margin-bottom:6px;overflow:hidden;cursor:pointer}
+.cat-hero .em{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:84px;opacity:.85}
+.cat-hero .cnt{padding:6px 13px;border-radius:14px;background:rgba(255,255,255,.9);color:var(--ink);font-size:12px;font-weight:700;position:relative}
+
+/* S9 conversational */
+#s9{background:linear-gradient(180deg,#f0f1fc,#f4f5fa)}
+.cs-input{border:1.5px solid var(--indigo);border-radius:20px;background:#fff;padding:18px;box-shadow:0 10px 30px rgba(45,63,204,.1)}
+.cs-quote{font-size:15px;font-weight:600;color:var(--ink);line-height:1.6}
+.cs-divider{height:1px;background:var(--line);margin:14px 0}
+.cs-actions{display:flex;align-items:center;justify-content:space-between}
+.cs-suggest{display:flex;align-items:center;gap:11px;padding:15px 16px;background:#fff;border:1px solid var(--line);border-radius:15px;margin-bottom:10px;cursor:pointer;transition:all .15s}
+.cs-suggest:hover{border-color:var(--indigo-l);transform:translateX(2px)}
+.cs-suggest .q{width:20px;height:20px;color:var(--indigo-l);flex-shrink:0}
+.cs-suggest .t{flex:1;font-size:13.5px;color:var(--ink);font-weight:500}
+.cs-understand{background:#eeeefb;border-radius:18px;padding:16px 18px;margin-top:6px}
+
+/* S10 grid */
+.fav-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:4px}
+.fav-card{border-radius:18px;background:#fff;border:1px solid var(--line);overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .2s}
+.fav-card:active{transform:scale(.97)}
+.fav-photo{height:118px;position:relative;display:flex;align-items:flex-start;justify-content:flex-end;padding:10px}
+.fav-photo .av{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.55);display:flex;align-items:center;justify-content:center;font-size:18px}
+.fav-info{padding:11px 13px 14px}
+.fav-nm{font-size:15px;font-weight:700;color:var(--ink)}
+.fav-ds{font-size:12px;color:var(--ink2);margin:3px 0 7px}
+.fav-rt{font-size:14px;color:var(--ink);font-weight:600;text-align:center}
+.fav-rt b{color:var(--gold)}
+
+/* S10 swipe overlay */
+#s10-swipe{position:absolute;inset:0;background:var(--bg);display:none;flex-direction:column;z-index:20}
+#s10-swipe.active{display:flex}
+.card-stack-area{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.master-card{position:absolute;width:316px;background:#fff;border-radius:24px;box-shadow:0 12px 44px rgba(20,20,60,.16);overflow:hidden;cursor:grab;user-select:none;touch-action:none;transition:transform .1s ease}
+.master-card:active{cursor:grabbing}
+.card-banner{height:178px;display:flex;align-items:center;justify-content:center;position:relative}
+.card-banner::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 55%,rgba(0,0,0,.3))}
+.card-avatar{width:96px;height:96px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:50px;border:3px solid rgba(255,255,255,.5);z-index:1}
+.card-verified{position:absolute;bottom:12px;right:14px;z-index:2;width:28px;height:28px;background:var(--indigo);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;border:2px solid #fff}
+.card-verified svg{width:14px;height:14px}
+.card-body{padding:16px 20px 20px}
+.card-name{font-size:21px;font-weight:800;color:var(--ink)}
+.card-role{font-size:13px;color:var(--ink2);margin:3px 0 11px}
+.card-meta{display:flex;gap:14px;margin-bottom:13px;font-size:12px;color:var(--ink2);flex-wrap:wrap}
+.card-meta b{color:var(--gold)}
+.card-tags{display:flex;flex-wrap:wrap;gap:7px}
+.card-hint{position:absolute;top:22px;padding:6px 14px;border-radius:8px;font-size:18px;font-weight:800;letter-spacing:1px;opacity:0;transition:opacity .12s;pointer-events:none;z-index:3}
+.card-hint-like{left:20px;border:3px solid var(--green);color:var(--green);transform:rotate(-14deg)}
+.card-hint-nope{right:20px;border:3px solid var(--red);color:var(--red);transform:rotate(14deg)}
+.card-stack-bg{position:absolute;width:296px;height:430px;background:#fff;border-radius:24px;box-shadow:0 6px 24px rgba(20,20,60,.08);transform:scale(.94) translateY(16px);z-index:0}
+.card-stack-bg2{position:absolute;width:284px;height:420px;background:#f6f6fb;border-radius:24px;transform:scale(.88) translateY(30px);z-index:-1}
+.card-counter{position:absolute;top:6px;right:22px;font-size:13px;color:var(--ink3);font-weight:600;z-index:5}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;text-align:center}
+.empty-state .em{font-size:54px}
+.empty-state h3{font-size:18px;font-weight:700;color:var(--ink2)}
+.empty-state p{font-size:13px;color:var(--ink3);line-height:1.6}
+
+/* S11 match box */
+.tabseg{display:flex;gap:8px;margin-bottom:16px}
+.match-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:13px;box-shadow:0 4px 16px rgba(20,20,60,.05)}
+.mh{display:flex;gap:12px;align-items:flex-start}
+.mh .info{flex:1}
+.mh .nm{font-size:15px;font-weight:700;color:var(--ink)}
+.mh .nm span{font-size:12px;color:var(--ink3);font-weight:500;margin-left:5px}
+.mh .topic{font-size:13.5px;color:var(--ink);margin:4px 0 7px}
+.mh .when{font-size:12px;color:var(--ink2);display:flex;align-items:center;gap:5px;line-height:1.45}
+.mfit{padding:5px 11px;border-radius:13px;background:#fff5e6;color:var(--gold);font-size:12px;font-weight:800;align-self:flex-start}
+.match-btns{display:flex;gap:10px;margin-top:14px}
+.match-btns .btn{flex:1;height:46px;font-size:14px}
+
+/* S12 chat */
+#s12{background:#f4f5fa}
+.chat-head{display:flex;align-items:center;gap:12px;padding:6px 0 14px}
+.chat-back{cursor:pointer;color:var(--ink)}
+.chat-peer{flex:1;display:flex;align-items:center;gap:9px}
+.chat-online{width:9px;height:9px;border-radius:50%;background:var(--green)}
+.ai-note{display:flex;justify-content:center;margin:8px 0 16px}
+.ai-note span{background:#e9eafb;color:var(--indigo);font-size:12px;font-weight:600;padding:7px 15px;border-radius:16px}
+.gloss{background:#eef0fb;border-radius:16px;padding:13px 16px;font-size:13px;color:var(--ink2);line-height:1.6;margin-bottom:14px;max-width:85%}
+.gloss b{color:var(--indigo);display:block;margin-bottom:4px;font-size:12px}
+.warm-note{display:flex;justify-content:center;margin:10px 0}
+.warm-note span{background:#fff4e6;color:#c87f1a;font-size:12px;font-weight:600;padding:7px 15px;border-radius:16px}
+
+/* S13 agreement */
+.agr-card{background:#fff;border-radius:22px;border:1px solid var(--line);box-shadow:0 10px 34px rgba(20,20,60,.08);padding:20px}
+.agr-parties{display:flex;align-items:center;justify-content:space-between;padding:8px 0 18px;border-bottom:1px solid var(--line)}
+.agr-party{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1}
+.agr-party .nm{font-size:12px;font-weight:600;color:var(--ink)}
+.agr-link{color:var(--ink3)}
+.agr-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line)}
+.agr-row .k{font-size:13px;color:var(--ink3)}
+.agr-row .v{font-size:15px;font-weight:700;color:var(--ink)}
+.agr-split{margin-top:16px}
+.agr-split .k{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px}
+.split-bar{display:flex;height:34px;border-radius:10px;overflow:hidden;font-size:12px;font-weight:700;color:#fff}
+.split-bar .m{flex:8;background:var(--purple);display:flex;align-items:center;justify-content:center}
+.split-bar .p{flex:2;background:var(--indigo-l);display:flex;align-items:center;justify-content:center;font-size:11px}
+.agr-ai{display:flex;gap:8px;font-size:12px;color:var(--ink2);margin-top:14px;line-height:1.5}
+.agr-ai svg{width:15px;height:15px;color:var(--indigo-l);flex-shrink:0;margin-top:1px}
+.agr-consent{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:15px;margin-top:14px;cursor:pointer}
+.agr-check{width:24px;height:24px;border-radius:7px;background:var(--purple);display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.agr-check svg{width:14px;height:14px}
+.agr-consent .t{font-size:14px;font-weight:600;color:var(--ink)}
+.agr-foot{display:flex;gap:12px;padding:0 0 4px}
+.agr-foot .btn{flex:1;height:54px}
+
+/* S14 dashboard */
+.dash-prof{display:flex;align-items:center;gap:14px;padding:6px 0 18px}
+.dash-prof .info{flex:1}
+.dash-prof .nm{font-size:18px;font-weight:800;color:var(--ink)}
+.dash-prof .nm span{font-size:12px;font-weight:500;color:var(--ink3);margin-left:6px}
+.dash-prof .ds{font-size:12.5px;color:var(--ink2);margin-top:3px}
+.level-card{display:flex;align-items:center;gap:18px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 6px 22px rgba(20,20,60,.05);cursor:pointer}
+.level-ring{width:78px;height:78px;flex-shrink:0;position:relative;display:flex;align-items:center;justify-content:center}
+.level-ring .num{font-size:24px;font-weight:800;color:var(--purple);line-height:1}
+.level-ring .lv{font-size:9px;color:var(--ink3)}
+.level-info{flex:1}
+.level-info .lab{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--indigo);margin-bottom:2px}
+.level-info .stage{font-size:17px;font-weight:800;color:var(--ink)}
+.level-info .next{font-size:12px;color:var(--ink2);margin:8px 0 7px}
+.level-bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.level-bar i{display:block;height:100%;width:62%;background:var(--purple);border-radius:4px}
+.wallet{background:linear-gradient(150deg,#2d2a8f,#1f1c66);border-radius:20px;padding:20px;color:#fff;box-shadow:0 12px 32px rgba(31,28,102,.35);cursor:pointer}
+.wallet-head{display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:600;margin-bottom:14px}
+.wallet-head .ic{display:flex;align-items:center;gap:8px}
+.wallet-amt{font-size:34px;font-weight:800;letter-spacing:-1px}
+.wallet-sub{display:flex;align-items:center;gap:10px;margin-top:12px}
+.wallet-sub .pill{padding:5px 12px;border-radius:14px;background:rgba(255,255,255,.16);font-size:12px;font-weight:700}
+.wallet-sub .txt{font-size:12px;opacity:.7}
+.stat3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}
+.stat-box{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 10px;text-align:center}
+.stat-box .v{font-size:26px;font-weight:800;color:var(--ink)}
+.stat-box .k{font-size:11.5px;color:var(--ink2);margin-top:3px}
+.dash-menu{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.dmrow{display:flex;align-items:center;gap:13px;padding:16px 18px;border-bottom:1px solid var(--line);cursor:pointer}
+.dmrow:last-child{border-bottom:none}
+.dmrow .ic{width:34px;height:34px;border-radius:10px;background:#eeeefb;display:flex;align-items:center;justify-content:center;color:var(--indigo)}
+.dmrow .ic svg{width:18px;height:18px}
+.dmrow .t{flex:1;font-size:15px;font-weight:600;color:var(--ink)}
+.dmrow .chev{color:var(--ink3)}
+
+/* S15 monthly */
+#s15{background:linear-gradient(170deg,#3730a3,#2a2580)}
+.m-eyebrow{font-size:13px;color:rgba(255,255,255,.6)}
+.m-title{font-size:26px;font-weight:800;color:#fff;margin-top:2px}
+.m-index{text-align:center;padding:14px 0 6px}
+.m-index .lab{font-size:13px;font-weight:700;letter-spacing:1px;color:rgba(255,255,255,.75);margin-bottom:10px}
+.m-index .big{font-size:60px;font-weight:800;color:#fff;line-height:1}
+.m-index .big span{color:rgba(255,255,255,.4);font-size:44px}
+.m-badges{display:flex;gap:8px;justify-content:center;margin-top:14px}
+.m-badges span{padding:7px 16px;border-radius:18px;background:rgba(255,255,255,.14);color:#fff;font-size:13px;font-weight:600}
+.m-settle{background:rgba(255,255,255,.1);border-radius:18px;padding:18px;display:flex;align-items:center;justify-content:space-between;color:#fff;margin-top:6px}
+.m-settle .l{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600}
+.m-settle .r{font-size:22px;font-weight:800}
+.m-stat2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.m-box{background:rgba(255,255,255,.1);border-radius:18px;padding:18px}
+.m-box .v{font-size:34px;font-weight:800;color:#fff}
+.m-box .k{font-size:13px;color:rgba(255,255,255,.65);margin-top:4px}
+.m-ai{background:rgba(255,255,255,.1);border-radius:18px;padding:18px}
+.m-ai .lab{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#fff;margin-bottom:10px}
+.m-ai .q{font-size:14px;color:rgba(255,255,255,.9);line-height:1.6}
+
+/* S16 hall of fame */
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:14px;padding:20px 0 6px}
+.pod{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer}
+.pod-av{position:relative}
+.pod-rank{position:absolute;top:-4px;right:-4px;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff}
+.pod-rank.r1{background:var(--blue)}
+.pod-rank.r2{background:#8a8a9a}
+.pod-rank.r3{background:#5c4a8a}
+.pod .nm{font-size:14px;font-weight:800;color:var(--ink)}
+.pod .fl{font-size:11px;color:var(--ink3)}
+.pod-score{border-radius:12px 12px 0 0;width:96px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800}
+.pod-1 .pod-score{height:64px;background:var(--purple);color:#fff}
+.pod-2 .pod-score{height:46px;background:#e4e4ee;color:var(--ink)}
+.pod-3 .pod-score{height:38px;background:#e4e4ee;color:var(--ink)}
+.hof-row{display:flex;align-items:center;gap:13px;padding:15px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.hof-row .rk{font-size:16px;font-weight:700;color:var(--ink3);width:18px}
+.hof-row .info{flex:1}
+.hof-row .nm{font-size:15px;font-weight:700;color:var(--ink)}
+.hof-row .fl{font-size:12px;color:var(--ink3);margin-top:2px}
+.hof-row .sc{font-size:15px;font-weight:700;color:var(--ink)}
+
+/* S17 records */
+.rec2-stat{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px}
+.rec2-box{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}
+.rec2-box .v{font-size:30px;font-weight:800;color:var(--ink)}
+.rec2-box .k{font-size:12.5px;color:var(--ink2);margin-top:3px}
+.rec2-row{display:flex;align-items:center;gap:13px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:11px}
+.rec2-row .info{flex:1}
+.rec2-row .nm{font-size:15px;font-weight:700;color:var(--ink)}
+.rec2-row .nm span{font-size:12px;font-weight:500;color:var(--blue);margin-left:6px}
+.rec2-row .ds{font-size:12.5px;color:var(--ink2);margin-top:3px}
+.rec2-replay{padding:9px 15px;border-radius:13px;background:#eeeefb;color:var(--indigo);font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
+.rec2-replay svg{width:13px;height:13px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="badge badge-screen" id="badgeScreen">스플래시 · 1/17</span>
+  <span class="badge badge-role" id="badgeRole">멘티 모드</span>
+  <button class="btn-restart" onclick="restart()">↺ 처음부터</button>
+</div>
+
+<div class="phone-wrap">
+  <div class="iphone-frame"></div>
+  <div class="phone-screen" id="phoneScreen">
+    <div class="dynamic-island"></div>
+
+    <!-- ════════ S1 스플래시 ════════ -->
+    <div class="screen active" id="s1">
+      <svg class="splash-swoosh" viewBox="0 0 200 200"><path d="M40 30 C120 30 120 100 100 130 C80 160 60 120 90 95 C130 60 180 90 160 160" fill="none" stroke="#3a3a44" stroke-width="44" stroke-linecap="round"/></svg>
+      <div class="statusbar dark" data-sb></div>
+      <div class="splash-content">
+        <div class="splash-logo">LINK <span class="on">ON</span></div>
+        <div class="splash-title">지혜를 잇다</div>
+        <div class="splash-divider"></div>
+        <div class="splash-tag">검색창엔 없는 답,<br>시니어의 삶에서 찾다.</div>
+      </div>
+      <div class="splash-bottom">
+        <button class="btn btn-blue btn-block" data-to="2">시작하기 &nbsp;→</button>
+        <div class="splash-login">이미 계정이 있으신가요? <b data-to="2">로그인</b></div>
+      </div>
+    </div>
+
+    <!-- ════════ S2 역할 선택 ════════ -->
+    <div class="screen dark-scr" id="s2">
+      <div class="statusbar dark" data-sb></div>
+      <div class="body pad" style="padding-top:8px">
+        <div class="progress"><i class="on"></i><i></i><i></i></div>
+        <div style="position:relative">
+          <span class="skip" data-to="3">건너뛰기</span>
+          <div class="eyebrow" style="margin-bottom:12px">Role Setup</div>
+          <div class="h1">당신의 역할을<br>알려주세요</div>
+          <div class="sub" style="margin:14px 0 4px">역할에 따라 온보딩과 홈 화면이 맞춤 구성돼요.</div>
+        </div>
+        <div class="role-grid">
+          <div class="role-card master" data-to="3" data-role="master">
+            <div class="role-face">👴</div>
+            <div class="role-name">마스터 <span>시니어</span></div>
+            <div class="role-desc">경력을 지혜로 잇고, 멘토링으로 가치를 만듭니다.</div>
+            <div class="role-feat">
+              <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>경력 구술 → AI 이력서·커리큘럼</div>
+              <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>멘토링 수익 정산</div>
+            </div>
+          </div>
+          <div class="role-card mentee" data-to="3" data-role="mentee">
+            <div class="role-face">🧑</div>
+            <div class="role-name">멘티 <span>청년</span></div>
+            <div class="role-desc">검색창엔 없는 답을 마스터의 경험에서 찾습니다.</div>
+            <div class="role-feat">
+              <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>학습 목표 → 추천 마스터 매칭</div>
+              <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>기술 배지·수료증</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:14px 22px 24px">
+        <button class="btn btn-primary btn-block" data-to="3" data-role="master">마스터로 시작하기 &nbsp;→</button>
+      </div>
+    </div>
+
+    <!-- ════════ S3 AI 온보딩 ════════ -->
+    <div class="screen dark-scr" id="s3">
+      <div class="statusbar dark" data-sb></div>
+      <div class="pad" style="padding-top:8px">
+        <div class="progress"><i class="on"></i><i class="on"></i><i></i></div>
+        <div style="position:relative">
+          <span class="skip" data-to="4">건너뛰기</span>
+          <div class="ob-row">
+            <div class="ob-ai"><svg viewBox="0 0 24 24" width="17" fill="currentColor"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/></svg></div>
+            <span style="font-size:14px;color:rgba(255,255,255,.8)">AI 온보딩</span>
+            <span class="ob-pill" style="background:#eef0fb;color:var(--indigo)">✦ 보이스</span>
+          </div>
+        </div>
+      </div>
+      <div class="body pad">
+        <div class="bubble ai">안녕하세요, 마스터님. 살아오신 경력을 말씀해 주시면 <b>이력서를 대신 작성</b>해 드릴게요.</div>
+        <div class="voice-bubble">
+          <div class="voice-wave" id="wave3"></div>
+          <div class="voice-time">0:42 · 음성 입력</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;font-size:12px;color:rgba(255,255,255,.5);margin:6px 0 12px">✦ 말씀을 이력서로 정리했어요</div>
+        <div class="resume-card">
+          <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--indigo);margin-bottom:8px">이력서 초안</div>
+          <div style="font-size:17px;font-weight:800;color:var(--ink)">강병민 · 전 삼성전자 상무</div>
+          <div style="font-size:13px;color:var(--ink2);margin:4px 0 12px">반도체 R&D · 31년 경력</div>
+          <div style="height:1px;background:var(--line);margin-bottom:12px"></div>
+          <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:13px">
+            <div style="height:9px;border-radius:5px;background:#eee;width:100%"></div>
+            <div style="height:9px;border-radius:5px;background:#eee;width:85%"></div>
+            <div style="height:9px;border-radius:5px;background:#eee;width:70%"></div>
+          </div>
+          <div style="display:flex;gap:7px"><span class="tag">반도체</span><span class="tag">조직 리더십</span><span class="tag">R&D 전략</span></div>
+        </div>
+      </div>
+      <div class="input-bar" data-to="4">
+        <div class="input-box">이어서 말씀해 주세요…</div>
+        <div class="mic-btn"><svg viewBox="0 0 24 24" width="20" fill="currentColor"><path d="M12 14a3 3 0 003-3V6a3 3 0 00-6 0v5a3 3 0 003 3z"/><path d="M19 11a7 7 0 01-14 0M12 18v3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      </div>
+    </div>
+
+    <!-- ════════ S4 음성 녹음 ════════ -->
+    <div class="screen dark-scr" id="s4">
+      <div class="statusbar dark" data-sb></div>
+      <div class="body pad" style="padding-top:8px">
+        <div class="progress"><i class="on"></i><i class="on"></i><i class="on"></i></div>
+        <div style="position:relative;margin-bottom:18px">
+          <span class="skip" data-to="ROLE_HOME">건너뛰기</span>
+          <div class="rec-status"><span class="rec-dot"></span>녹음 중 · 듣고 있어요</div>
+        </div>
+        <div class="rec-quote">"삼성전자에서 <b>반도체 연구</b>를 31년 했고, 마지막엔 상무로 일했어요…"</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.45);margin:16px 0 0">말로 만드는 이력서</div>
+        <div class="rec-wavebox" id="wave4"></div>
+        <div style="display:inline-flex;align-items:center;gap:8px"><span class="ob-pill" style="background:#eef0fb;color:var(--indigo)">✦ 실시간</span><span style="font-size:12px;color:rgba(255,255,255,.5)">이력서를 한 줄씩 채우는 중</span></div>
+        <div style="margin-top:14px">
+          <div class="rec-field"><span class="k">경력</span><span class="v">삼성전자 · 31년 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+          <div class="rec-field"><span class="k">직무</span><span class="v">반도체 R&D · 상무 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+          <div class="rec-field"><span class="k">강의 주제</span><span class="v" style="color:rgba(255,255,255,.4);font-weight:500">듣는 중…</span></div>
+        </div>
+      </div>
+      <div style="padding:10px 22px 22px;text-align:center">
+        <div class="rec-mic" data-to="ROLE_HOME"><svg viewBox="0 0 24 24" width="30" fill="#fff"><path d="M12 14a3 3 0 003-3V6a3 3 0 00-6 0v5a3 3 0 003 3z"/><path d="M19 11a7 7 0 01-14 0M12 18v3" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+        <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:8px">탭하여 잠시 멈추기 · 타이핑 없이 끝까지 음성으로</div>
+      </div>
+    </div>
+
+    <!-- ════════ S5 홈 (멘티) ════════ -->
+    <div class="screen" id="s5">
+      <div class="statusbar light" data-sb></div>
+      <div class="body pad">
+        <div class="home-top">
+          <div>
+            <div class="greet-sub">오늘은 어떤 지혜와 연결될까요</div>
+            <div class="greet">정수연님 👋</div>
+          </div>
+          <div class="bell" data-to="11"><span class="ndot"></span><svg viewBox="0 0 24 24" width="21" fill="none" stroke="var(--ink)" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        </div>
+        <div class="searchbar" data-to="9"><svg viewBox="0 0 24 24" width="19" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg>마스터·분야·키워드 검색</div>
+
+        <div class="sec-head"><div class="h2">오늘의 마스터</div><span class="ai-pill">✦ AI 추천</span></div>
+        <div class="feat-card">
+          <div class="feat-photo" style="background:linear-gradient(150deg,#1E3A8A,#2d3fcc)">
+            <span class="feat-match">⭐ 96% 매칭</span>
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:96px">👨‍💼</div>
+          </div>
+          <div class="feat-body">
+            <div class="feat-name">강병민 <span>전 삼성전자 상무</span></div>
+            <div class="feat-meta">반도체 R&D · 31년 경력 · 대기업 취업 노하우</div>
+            <div class="feat-tags"><span class="tag">이력서 첨삭</span><span class="tag">면접 준비</span><span class="tag">커리어 설계</span></div>
+            <div class="feat-actions">
+              <button class="btn btn-ghost" data-to="13">프로필</button>
+              <button class="btn btn-blue" data-to="13">세션 신청 →</button>
+            </div>
+          </div>
+        </div>
+        <div class="carousel-dots"><i class="on"></i><i></i><i></i><i></i></div>
+
+        <div class="sec-head" style="margin-top:26px"><div class="h2">금주의 인기 클래스</div><span style="font-size:13px;color:var(--indigo);font-weight:600">전체</span></div>
+        <div class="lrow" data-to="7">
+          <div class="avatar" style="width:54px;height:54px;background:linear-gradient(150deg,#7C2D12,#a84a25);font-size:26px">🏺<span class="vbadge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+          <div class="info"><div class="nm">김순자 <span>도예 명장</span></div><div class="ds">40년 전통 · 손으로 빚는 그릇</div><div class="rt"><b>★ 4.9</b> · ₩90,000</div></div>
+          <span class="chev"><svg viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6" stroke-linecap="round"/></svg></span>
+        </div>
+        <div class="lrow" data-to="7">
+          <div class="avatar" style="width:54px;height:54px;background:linear-gradient(150deg,#064E3B,#0d8a64);font-size:26px">🔬<span class="vbadge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+          <div class="info"><div class="nm">이정호 <span>전 LG 연구원</span></div><div class="ds">화학 · 28년 · 직무 전환 멘토링</div><div class="rt"><b>★ 4.8</b> · ₩140,000</div></div>
+          <span class="chev"><svg viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6" stroke-linecap="round"/></svg></span>
+        </div>
+      </div>
+      <div class="bottomnav" data-nav="mentee" data-active="0"></div>
+    </div>
+
+    <!-- ════════ S6 오늘의 멘티 (마스터 스와이프) ════════ -->
+    <div class="screen" id="s6">
+      <div class="statusbar light" data-sb></div>
+      <div class="pad" style="padding-top:4px">
+        <div class="eyebrow" style="font-size:11px">마스터 모드 · 지혜 탐색</div>
+        <div class="h2" style="margin-top:3px">오늘의 멘티</div>
+      </div>
+      <div class="mentee-card">
+        <div class="mc-photo">
+          <span class="mc-match">⭐ 92% 적합</span>
+          <div class="mc-emoji">🧑‍💻</div>
+          <div class="mc-name">박지훈 <span>27 · 취준생</span></div>
+          <div class="mc-desc">반도체 직무 면접을 준비 중이에요. 실무 경험을 들려주실 마스터를 찾아요.</div>
+          <div class="mc-tags"><span>반도체</span><span>면접 준비</span><span>이번 주 토요일</span></div>
+        </div>
+      </div>
+      <div class="swipe-row">
+        <button class="srb x" onclick="showToast('다음 멘티를 볼게요')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg></button>
+        <button class="srb big" data-to="11"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.5-9.5-9C.8 8.5 2.3 5 5.5 5 7.5 5 9 6.2 12 9c3-2.8 4.5-4 6.5-4 3.2 0 4.7 3.5 3 7-2.5 4.5-9.5 9-9.5 9z"/></svg></button>
+        <button class="srb save" onclick="showToast('관심 멘티로 저장했어요 ⭐')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h12v16l-6-4-6 4z" stroke-linejoin="round"/></svg></button>
+      </div>
+      <div class="bottomnav" data-nav="master" data-active="0"></div>
+    </div>
+
+    <!-- ════════ S7 분야별 마스터 ════════ -->
+    <div class="screen" id="s7">
+      <div class="statusbar light" data-sb></div>
+      <div class="body pad">
+        <div class="phead">
+          <div class="eyebrow">Master Curation</div>
+          <div class="h1" style="font-size:25px;margin:6px 0 8px">분야별 마스터</div>
+          <div class="sub">장인의 손끝에서 이어지는 지혜를 분야로 탐색해요.</div>
+        </div>
+        <div class="chiprow" style="margin-bottom:16px">
+          <div class="chip on">공예</div><div class="chip">기술</div><div class="chip">상담</div><div class="chip">예술</div><div class="chip">경영</div><div class="chip">교육</div>
+        </div>
+        <div class="cat-hero" data-to="8" style="background:linear-gradient(150deg,#7C2D12,#b5673a)"><div class="em">🏺</div><div class="cnt">공예 · 12명</div></div>
+        <div style="margin-top:8px">
+          <div class="lrow" data-to="13">
+            <div class="avatar" style="width:50px;height:50px;background:linear-gradient(150deg,#7C2D12,#a84a25);font-size:24px">🏺<span class="vbadge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+            <div class="info"><div class="nm">김순자 <span>도예 명장</span></div><div class="ds">40년 전통 도자 · 오프라인</div><div class="rt"><b>★ 4.9</b> · ₩90,000</div></div>
+            <span class="chev"><svg viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h12v16l-6-4-6 4z" stroke-linejoin="round"/></svg></span>
+          </div>
+          <div class="lrow" data-to="13">
+            <div class="avatar" style="width:50px;height:50px;background:linear-gradient(150deg,#4C1D95,#7b3fd1);font-size:24px">📜<span class="vbadge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+            <div class="info"><div class="nm">문해성 <span>한지 장인</span></div><div class="ds">무형문화재 이수 · 35년</div><div class="rt"><b>★ 5.0</b> · ₩120,000</div></div>
+            <span class="chev"><svg viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h12v16l-6-4-6 4z" stroke-linejoin="round"/></svg></span>
+          </div>
+          <div class="lrow" data-to="13">
+            <div class="avatar" style="width:50px;height:50px;background:linear-gradient(150deg,#78350F,#a86a2a);font-size:24px">🪵<span class="vbadge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+            <div class="info"><div class="nm">배기훈 <span>목공 마스터</span></div><div class="ds">가구 수선·복원 · 30년</div><div class="rt"><b>★ 4.8</b> · ₩80,000</div></div>
+            <span class="chev"><svg viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h12v16l-6-4-6 4z" stroke-linejoin="round"/></svg></span>
+          </div>
+        </div>
+      </div>
+      <div class="bottomnav" data-nav="mentee" data-active="0"></div>
+    </div>
+
+    <!-- ════════ S8 마스터 탐색 ════════ -->
+    <div class="screen" id="s8">
+      <div class="statusbar light" data-sb></div>
+      <div class="body pad">
+        <div class="phead"><div class="h1" style="font-size:25px;margin-bottom:14px">마스터 탐색</div></div>
+        <div class="searchbar" style="margin:0 0 14px" data-to="9"><svg viewBox="0 0 24 24" width="19" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg><span style="color:var(--ink)">반도체 면접</span></div>
+        <div class="chiprow" style="margin-bottom:16px">
+          <div class="chip on">⇅ 필터</div><div class="chip">숙련도</div><div class="chip">비용</div><div class="chip">온라인</div><div class="chip">오프라인</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:13px;color:var(--ink3);font-weight:600">마스터 38명</span>
+          <span style="font-size:13px;color:var(--ink2);font-weight:600">매칭률순 ▾</span>
+        </div>
+        <div class="lrow" data-to="13">
+          <div class="avatar" style="width:52px;height:52px;background:linear-gradient(150deg,#1E3A8A,#3d5fc4);font-size:25px">👨‍💼<span class="vbadge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+          <div class="info"><div class="nm">강병민 <span>전 삼성 상무</span></div><div class="ds">반도체 R&D · 31년 · 온/오프라인</div><div class="rt"><b>★ 4.9</b> · ₩140,000</div></div>
+          <span class="chev"><svg viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6" stroke-linecap="round"/></svg></span>
+        </div>
+        <div class="lrow" data-to="13">
+          <div class="avatar" style="width:52px;height:52px;background:linear-gradient(150deg,#064E3B,#0d8a64);font-size:25px">🔬<span class="vbadge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+          <div class="info"><div class="nm">이정호 <span>전 LG 연구원</span></div><div class="ds">화학·직무전환 · 28년 · 온라인</div><div class="rt"><b>★ 4.8</b> · ₩120,000</div></div>
+          <span class="chev"><svg viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6" stroke-linecap="round"/></svg></span>
+        </div>
+        <div class="lrow" data-to="13">
+          <div class="avatar" style="width:52px;height:52px;background:linear-gradient(150deg,#92400e,#c47d2a);font-size:25px">📊<span class="vbadge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+          <div class="info"><div class="nm">정만수 <span>전 SK 부장</span></div><div class="ds">공정관리 · 26년 · 면접 코칭</div><div class="rt"><b>★ 4.7</b> · ₩100,000</div></div>
+          <span class="chev"><svg viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6" stroke-linecap="round"/></svg></span>
+        </div>
+        <div class="lrow" data-to="13">
+          <div class="avatar" style="width:52px;height:52px;background:linear-gradient(150deg,#1E3A5F,#3a6296);font-size:25px">⚙️<span class="vbadge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+          <div class="info"><div class="nm">홍기석 <span>전 현대 수석</span></div><div class="ds">설계·R&D · 30년 · 오프라인</div><div class="rt"><b>★ 4.9</b> · ₩130,000</div></div>
+          <span class="chev"><svg viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6" stroke-linecap="round"/></svg></span>
+        </div>
+      </div>
+      <div class="bottomnav" data-nav="mentee" data-active="1"></div>
+    </div>
+
+    <!-- ════════ S9 대화형 검색 ════════ -->
+    <div class="screen" id="s9">
+      <div class="statusbar light" data-sb></div>
+      <div class="body pad">
+        <div class="phead">
+          <span class="ai-pill" style="margin-bottom:12px">✦ 대화형 검색</span>
+          <div class="h1" style="margin:8px 0">어떤 지혜가<br>필요하세요?</div>
+          <div class="sub">키워드 대신, 고민을 문장으로 적어보세요. AI가 알맞은 마스터를 찾아드려요.</div>
+        </div>
+        <div class="cs-input" style="margin-top:18px">
+          <div class="cs-quote">"반도체 직무로 이직하는데, 면접에서 실무 경험을 어떻게 말해야 할지 모르겠어요"</div>
+          <div class="cs-divider"></div>
+          <div class="cs-actions">
+            <svg viewBox="0 0 24 24" width="22" fill="none" stroke="var(--ink3)" stroke-width="2"><path d="M12 14a3 3 0 003-3V6a3 3 0 00-6 0v5a3 3 0 003 3z"/><path d="M19 11a7 7 0 01-14 0M12 18v3" stroke-linecap="round"/></svg>
+            <button class="btn btn-primary" style="height:42px;padding:0 22px;border-radius:14px" data-to="8">찾기 ➤</button>
+          </div>
+        </div>
+        <div style="font-size:13px;color:var(--ink3);font-weight:600;margin:24px 0 12px">이렇게 물어보세요</div>
+        <div class="cs-suggest" data-to="8"><svg class="q" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 01-11 7.5L3 21l1.5-7A8 8 0 1121 12z"/></svg><div class="t">반도체 회사 면접이 한 달 남았어요</div><span style="color:var(--ink3)">→</span></div>
+        <div class="cs-suggest" data-to="8"><svg class="q" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 01-11 7.5L3 21l1.5-7A8 8 0 1121 12z"/></svg><div class="t">은퇴 후 도예를 배우고 싶어요</div><span style="color:var(--ink3)">→</span></div>
+        <div class="cs-suggest" data-to="8"><svg class="q" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 01-11 7.5L3 21l1.5-7A8 8 0 1121 12z"/></svg><div class="t">이력서를 처음부터 다시 쓰고 싶어요</div><span style="color:var(--ink3)">→</span></div>
+        <div class="cs-understand">
+          <div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:var(--indigo);margin-bottom:11px">✦ AI가 이렇게 이해했어요</div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap"><span class="tag">반도체</span><span class="tag">면접 코칭</span><span class="tag">실무 경험 정리</span><span class="tag">직무 전환</span></div>
+        </div>
+      </div>
+      <div class="bottomnav" data-nav="mentee" data-active="1"></div>
+    </div>
+
+    <!-- ════════ S10 관심 목록 ════════ -->
+    <div class="screen" id="s10">
+      <div class="statusbar light" data-sb></div>
+      <div class="body pad" id="s10-grid">
+        <div class="phead" style="display:flex;align-items:flex-start;justify-content:space-between">
+          <div>
+            <div class="h1" style="font-size:25px">관심 목록</div>
+            <div class="sub" style="margin-top:5px">찜한 마스터 9명 · 비교해보고 세션을 신청하세요.</div>
+          </div>
+          <span style="cursor:pointer;color:var(--indigo)" onclick="enterSwipeMode(0)" title="카드로 비교"><svg viewBox="0 0 24 24" width="24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg></span>
+        </div>
+        <div class="chiprow" style="margin-bottom:14px">
+          <div class="chip on">전체</div><div class="chip">온라인</div><div class="chip">면접</div><div class="chip">이력서</div>
+        </div>
+        <div class="fav-grid">
+          <div class="fav-card" onclick="enterSwipeMode(0)">
+            <div class="fav-photo" style="background:linear-gradient(150deg,#1E3A8A,#3d5fc4)"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:44px">👨‍💼</div><div class="av">⭐</div></div>
+            <div class="fav-info"><div class="fav-nm">강병민</div><div class="fav-ds">반도체·31년</div><div class="fav-rt"><b>★</b> 4.9</div></div>
+          </div>
+          <div class="fav-card" onclick="enterSwipeMode(1)">
+            <div class="fav-photo" style="background:linear-gradient(150deg,#7C2D12,#a84a25)"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:44px">🏺</div><div class="av">⭐</div></div>
+            <div class="fav-info"><div class="fav-nm">김순자</div><div class="fav-ds">도예·40년</div><div class="fav-rt"><b>★</b> 4.9</div></div>
+          </div>
+          <div class="fav-card" onclick="enterSwipeMode(2)">
+            <div class="fav-photo" style="background:linear-gradient(150deg,#064E3B,#0d8a64)"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:44px">🔬</div><div class="av">⭐</div></div>
+            <div class="fav-info"><div class="fav-nm">이정호</div><div class="fav-ds">화학·28년</div><div class="fav-rt"><b>★</b> 4.8</div></div>
+          </div>
+          <div class="fav-card" onclick="enterSwipeMode(3)">
+            <div class="fav-photo" style="background:linear-gradient(150deg,#4C1D95,#7b3fd1)"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:44px">📜</div><div class="av">⭐</div></div>
+            <div class="fav-info"><div class="fav-nm">문해성</div><div class="fav-ds">한지·35년</div><div class="fav-rt"><b>★</b> 5.0</div></div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:18px"><button class="btn btn-primary" style="height:48px;padding:0 28px;margin:0 auto" onclick="enterSwipeMode(0)">카드로 비교하기 ⇄</button></div>
+      </div>
+
+      <!-- 스와이프 오버레이 -->
+      <div id="s10-swipe">
+        <div class="statusbar light" data-sb></div>
+        <div class="pad" style="padding-top:2px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <span class="chat-back" onclick="exitSwipeMode()"><svg viewBox="0 0 24 24" width="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <div class="h2">관심 목록</div>
+            <span style="cursor:pointer;color:var(--indigo)" onclick="exitSwipeMode()"><svg viewBox="0 0 24 24" width="22" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg></span>
+          </div>
+          <div class="sub" style="margin-bottom:14px">밀어서 비교 · <strong style="color:var(--indigo)">하트</strong>를 누르면 세션을 신청해요.</div>
+          <div class="chiprow" style="margin-bottom:8px"><div class="chip on">전체</div><div class="chip">온라인</div><div class="chip">면접</div><div class="chip">이력서</div></div>
+        </div>
+        <div class="card-stack-area" id="cardStackArea">
+          <div class="card-counter" id="cardCounter"></div>
+          <div class="card-stack-bg2"></div>
+          <div class="card-stack-bg"></div>
+        </div>
+        <div class="empty-state" id="emptyState" style="display:none">
+          <div class="em">✨</div><h3>모두 살펴봤어요!</h3>
+          <p>관심 마스터를 모두 확인했어요.<br>세션 신청을 이어서 진행해보세요.</p>
+          <button class="btn btn-primary" style="height:48px;padding:0 28px;margin-top:6px" onclick="resetSwipeCards()">다시 보기</button>
+        </div>
+        <div class="swipe-row" id="swipeActions">
+          <button class="srb x" onclick="swipeCard('skip')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg></button>
+          <button class="srb big" onclick="swipeCard('session')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.5-9.5-9C.8 8.5 2.3 5 5.5 5 7.5 5 9 6.2 12 9c3-2.8 4.5-4 6.5-4 3.2 0 4.7 3.5 3 7-2.5 4.5-9.5 9-9.5 9z"/></svg></button>
+          <button class="srb save" onclick="swipeCard('save')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h12v16l-6-4-6 4z" stroke-linejoin="round"/></svg></button>
+        </div>
+      </div>
+      <div class="bottomnav" data-nav="mentee" data-active="2"></div>
+    </div>
+
+    <!-- ════════ S11 매칭 박스 ════════ -->
+    <div class="screen" id="s11">
+      <div class="statusbar light" data-sb></div>
+      <div class="body pad">
+        <div class="phead"><div class="h1" style="font-size:25px">매칭 박스</div><div class="sub" style="margin-top:5px">지혜를 청하는 멘티들이 기다리고 있어요.</div></div>
+        <div class="tabseg"><div class="chip on">신청 3</div><div class="chip">진행 중 2</div><div class="chip">예정</div></div>
+        <div class="match-card">
+          <div class="mh">
+            <div class="avatar" style="width:50px;height:50px;background:linear-gradient(150deg,#5b67f8,#2d3fcc);font-size:24px">🧑‍💻</div>
+            <div class="info"><div class="nm">박지훈 <span>27 · 취준생</span></div><div class="topic">반도체 직무 면접 준비 멘토링 요청</div><div class="when"><svg viewBox="0 0 24 24" width="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round"/></svg>원하는 일정 · 이번 주 토요일 오후</div></div>
+            <span class="mfit">92% 적합</span>
+          </div>
+          <div class="match-btns"><button class="btn btn-ghost" onclick="showToast('정중히 거절했어요')">거절</button><button class="btn btn-blue" data-to="12">수락</button></div>
+        </div>
+        <div class="match-card">
+          <div class="mh">
+            <div class="avatar" style="width:50px;height:50px;background:linear-gradient(150deg,#0d8a64,#064E3B);font-size:24px">👩‍🎓</div>
+            <div class="info"><div class="nm">이서연 <span>24 · 대학생</span></div><div class="topic">이력서 첨삭과 커리어 방향 상담</div><div class="when"><svg viewBox="0 0 24 24" width="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round"/></svg>원하는 일정 · 평일 저녁 온라인</div></div>
+          </div>
+          <div class="match-btns"><button class="btn btn-ghost" onclick="showToast('정중히 거절했어요')">거절</button><button class="btn btn-blue" data-to="12">수락</button></div>
+        </div>
+        <div class="match-card">
+          <div class="mh">
+            <div class="avatar" style="width:50px;height:50px;background:linear-gradient(150deg,#92400e,#c47d2a);font-size:24px">🧑‍💼</div>
+            <div class="info"><div class="nm">윤하늘 <span>29 · 직장인</span></div><div class="topic">직무 전환 — R&D 실무 이야기</div><div class="when"><svg viewBox="0 0 24 24" width="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round"/></svg>원하는 일정 · 협의</div></div>
+          </div>
+          <div class="match-btns"><button class="btn btn-ghost" onclick="showToast('정중히 거절했어요')">거절</button><button class="btn btn-blue" data-to="12">수락</button></div>
+        </div>
+      </div>
+      <div class="bottomnav" data-nav="master" data-active="2"></div>
+    </div>
+
+    <!-- ════════ S12 대화 ════════ -->
+    <div class="screen" id="s12">
+      <div class="statusbar light" data-sb></div>
+      <div class="pad">
+        <div class="chat-head">
+          <span class="chat-back" data-to="BACK"><svg viewBox="0 0 24 24" width="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <div class="chat-peer">
+            <div class="avatar" style="width:38px;height:38px;background:linear-gradient(150deg,#5b67f8,#2d3fcc);font-size:18px">🧑‍💻<span class="vbadge" style="width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+            <span class="chat-online"></span>
+          </div>
+          <span style="color:var(--indigo);cursor:pointer" data-to="13"><svg viewBox="0 0 24 24" width="24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3" stroke-linejoin="round"/></svg></span>
+        </div>
+      </div>
+      <div class="body pad">
+        <div class="ai-note"><span>✦ AI가 세대 간 대화를 부드럽게 도와요</span></div>
+        <div class="bubble ai">마스터님 TMI일 수도 있는데, 제 스펙이 좀 약한 편이라 갓생 살아보려구요 ㅎㅎ</div>
+        <div class="gloss"><b>✦ 풀이 — 요즘 표현</b>"TMI"=너무 많은 정보, "갓생"=부지런하고 성실한 삶. 멘티가 경험이 부족해 더 노력하겠다는 뜻이에요.</div>
+        <div class="bubble me">좋은 자세네. 스펙보다 태도가 오래 갑니다. 토요일에 차근히 봅시다.</div>
+        <div class="warm-note"><span>✦ 이 표현이 멘티에게 더 따뜻하게 전달돼요</span></div>
+      </div>
+      <div class="input-bar" style="background:#fff;border-top:1px solid var(--line)" data-to="13">
+        <div class="input-box" style="background:#f0f0f5;color:var(--ink3)">메시지 입력…</div>
+        <div class="mic-btn" style="background:var(--purple)"><svg viewBox="0 0 24 24" width="20" fill="none" stroke="#fff" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linejoin="round"/></svg></div>
+      </div>
+    </div>
+
+    <!-- ════════ S13 협약 체결 ════════ -->
+    <div class="screen" id="s13">
+      <div class="statusbar light" data-sb></div>
+      <div class="pad" style="padding-top:2px">
+        <span class="chat-back" data-to="BACK"><svg viewBox="0 0 24 24" width="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </div>
+      <div class="body pad" style="padding-top:10px">
+        <div class="agr-card">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+            <div><div class="eyebrow" style="color:var(--indigo)">Agreement</div><div class="h2" style="margin-top:4px">반도체 면접 멘토링</div></div>
+            <svg viewBox="0 0 24 24" width="26" fill="none" stroke="var(--indigo)" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke-linecap="round"/></svg>
+          </div>
+          <div class="agr-parties">
+            <div class="agr-party"><div class="avatar" style="width:50px;height:50px;background:linear-gradient(150deg,#1E3A8A,#3d5fc4);font-size:24px">👨‍💼<span class="vbadge" style="width:16px;height:16px"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div><div class="nm">강병민 마스터</div></div>
+            <div class="agr-link"><svg viewBox="0 0 24 24" width="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l4-3v6zM21 12l-4-3v6zM7 12h10" stroke-linejoin="round"/></svg></div>
+            <div class="agr-party"><div class="avatar" style="width:50px;height:50px;background:linear-gradient(150deg,#5b67f8,#2d3fcc);font-size:24px">🧑‍💻</div><div class="nm">박지훈 멘티</div></div>
+          </div>
+          <div class="agr-row"><span class="k">세션</span><span class="v">4회 · 회당 60분</span></div>
+          <div class="agr-row"><span class="k">일정</span><span class="v">매주 토 14:00</span></div>
+          <div class="agr-row"><span class="k">방식</span><span class="v">온라인 화상</span></div>
+          <div class="agr-row"><span class="k">총 금액</span><span class="v" style="font-size:18px">₩560,000</span></div>
+          <div class="agr-split">
+            <div class="k">수익 분배</div>
+            <div class="split-bar"><div class="m">마스터 80%</div><div class="p">플랫폼 20%</div></div>
+          </div>
+          <div class="agr-ai"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/></svg>대화 내용을 바탕으로 조건을 초안했어요. 수정 가능해요.</div>
+        </div>
+        <div class="agr-consent" onclick="showToast('동의했어요 ✓')"><div class="agr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="t">협약 조건과 정산 방식에 동의합니다</div></div>
+      </div>
+      <div class="pad" style="padding-bottom:22px"><div class="agr-foot"><button class="btn btn-ghost" data-to="BACK">수정</button><button class="btn btn-primary" style="flex:2" data-to="AGREE_DONE">협약 체결하기</button></div></div>
+    </div>
+
+    <!-- ════════ S14 마스터 대시보드 ════════ -->
+    <div class="screen" id="s14">
+      <div class="statusbar light" data-sb></div>
+      <div class="body pad">
+        <div class="dash-prof">
+          <div class="avatar" style="width:58px;height:58px;background:linear-gradient(150deg,#1E3A8A,#3d5fc4);font-size:28px">👨‍💼<span class="vbadge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+          <div class="info"><div class="nm">강병민 <span>마스터</span></div><div class="ds">전 삼성전자 상무 · 반도체 R&D 31년</div></div>
+          <span style="color:var(--ink3);cursor:pointer"><svg viewBox="0 0 24 24" width="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h12M4 8a2 2 0 104 0 2 2 0 10-4 0M20 16H8m12 0a2 2 0 10-4 0 2 2 0 104 0" stroke-linecap="round"/></svg></span>
+        </div>
+        <div class="level-card" data-to="15">
+          <div class="level-ring">
+            <svg viewBox="0 0 80 80" width="78" height="78" style="position:absolute;top:0;left:0;transform:rotate(-90deg)"><circle cx="40" cy="40" r="34" fill="none" stroke="var(--line)" stroke-width="7"/><circle cx="40" cy="40" r="34" fill="none" stroke="var(--purple)" stroke-width="7" stroke-linecap="round" stroke-dasharray="213" stroke-dashoffset="30"/></svg>
+            <div style="text-align:center"><div class="num">86</div><div class="lv">LV.4</div></div>
+          </div>
+          <div class="level-info"><div class="lab">디지털 명인 지수</div><div class="stage">숙련 단계</div><div class="next">다음 단계까지 세션 4회</div><div class="level-bar"><i></i></div></div>
+        </div>
+        <div class="wallet" style="margin-top:14px" data-to="15">
+          <div class="wallet-head"><span class="ic"><svg viewBox="0 0 24 24" width="18" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>정산 지갑</span><svg viewBox="0 0 24 24" width="18" fill="none" stroke="#fff" stroke-width="2"><path d="M9 6l6 6-6 6" stroke-linecap="round"/></svg></div>
+          <div class="wallet-amt">₩2,840,000</div>
+          <div class="wallet-sub"><span class="pill">이번 달 +₩560,000</span><span class="txt">출금 가능</span></div>
+        </div>
+        <div class="stat3" style="margin-top:14px">
+          <div class="stat-box"><div class="v">312</div><div class="k">완료 세션</div></div>
+          <div class="stat-box"><div class="v">88</div><div class="k">멘티</div></div>
+          <div class="stat-box"><div class="v">4.9</div><div class="k">평점</div></div>
+        </div>
+        <div class="dash-menu" style="margin-top:16px">
+          <div class="dmrow" data-to="16"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M6 4h12v5a6 6 0 01-12 0zM6 6H3v2a3 3 0 003 3M18 6h3v2a3 3 0 01-3 3" stroke-linejoin="round"/></svg></div><div class="t">명예의 전당</div><span class="chev"><svg viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6" stroke-linecap="round"/></svg></span></div>
+          <div class="dmrow" data-to="17"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3" stroke-linecap="round"/></svg></div><div class="t">전수 기록</div><span class="chev"><svg viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6" stroke-linecap="round"/></svg></span></div>
+          <div class="dmrow" data-to="3"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3v4a1 1 0 001 1h4M5 3h9l5 5v11a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" stroke-linejoin="round"/></svg></div><div class="t">내 강의·이력서 관리</div><span class="chev"><svg viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6" stroke-linecap="round"/></svg></span></div>
+        </div>
+      </div>
+      <div class="bottomnav" data-nav="master" data-active="3"></div>
+    </div>
+
+    <!-- ════════ S15 이 달의 전수 ════════ -->
+    <div class="screen" id="s15">
+      <div class="statusbar dark" data-sb></div>
+      <div class="body pad">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;padding-top:4px">
+          <div><div class="m-eyebrow">2026년 6월</div><div class="m-title">이 달의 전수</div></div>
+          <div class="avatar" style="width:48px;height:48px;background:rgba(255,255,255,.2);font-size:24px">👨‍💼<span class="vbadge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+        </div>
+        <div class="m-index">
+          <div class="lab">디지털 명인 지수</div>
+          <div class="big">86<span> / 100</span></div>
+          <div class="m-badges"><span>▲ 7 이번 달</span><span>숙련 LV.4</span></div>
+        </div>
+        <div class="m-settle" style="margin-top:10px"><div class="l"><svg viewBox="0 0 24 24" width="18" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>이번 달 정산</div><div class="r">+₩560,000</div></div>
+        <div class="m-stat2" style="margin-top:12px">
+          <div class="m-box"><div class="v">14</div><div class="k">완료 세션</div></div>
+          <div class="m-box"><div class="v">6</div><div class="k">새 멘티</div></div>
+        </div>
+        <div class="m-ai" style="margin-top:12px">
+          <div class="lab">✦ AI 한 줄 회고</div>
+          <div class="q">"면접 멘토링 만족도가 가장 높았어요. 다음 달엔 이력서 첨삭 클래스를 열어보는 건 어떨까요?"</div>
+        </div>
+        <div style="margin-top:16px"><button class="btn btn-block" style="background:rgba(255,255,255,.16);color:#fff;height:52px" data-to="16">명예의 전당 보기 →</button></div>
+      </div>
+      <div class="bottomnav dark" data-nav="master" data-active="0"></div>
+    </div>
+
+    <!-- ════════ S16 명예의 전당 ════════ -->
+    <div class="screen" id="s16">
+      <div class="statusbar light" data-sb></div>
+      <div class="body pad">
+        <div class="phead" style="margin-bottom:6px"><div class="h2" style="display:flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="22" fill="none" stroke="var(--indigo)" stroke-width="2"><path d="M8 21h8M12 17v4M6 4h12v5a6 6 0 01-12 0zM6 6H3v2a3 3 0 003 3M18 6h3v2a3 3 0 01-3 3" stroke-linejoin="round"/></svg>명예의 전당</div><div class="sub" style="margin-top:5px">이 달 가장 깊은 지혜를 전한 마스터들.</div></div>
+        <div class="podium">
+          <div class="pod pod-2" data-to="14">
+            <div class="pod-av"><div class="avatar" style="width:64px;height:64px;background:linear-gradient(150deg,#4C1D95,#7b3fd1);font-size:30px">📜<span class="vbadge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div><span class="pod-rank r2">2</span></div>
+            <div class="nm">문해성</div><div class="fl">한지 장인</div><div class="pod-score">5.0</div>
+          </div>
+          <div class="pod pod-1" data-to="14">
+            <div class="pod-av"><div class="avatar" style="width:80px;height:80px;background:linear-gradient(150deg,#1E3A8A,#3d5fc4);font-size:38px;border:3px solid var(--indigo-l)">👨‍💼<span class="vbadge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div><span class="pod-rank r1">1</span></div>
+            <div class="nm">강병민</div><div class="fl">반도체 R&D</div><div class="pod-score">4.9</div>
+          </div>
+          <div class="pod pod-3" data-to="14">
+            <div class="pod-av"><div class="avatar" style="width:64px;height:64px;background:linear-gradient(150deg,#7C2D12,#a84a25);font-size:30px">🏺<span class="vbadge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div><span class="pod-rank r3">3</span></div>
+            <div class="nm">김순자</div><div class="fl">도예 명장</div><div class="pod-score">4.9</div>
+          </div>
+        </div>
+        <div style="margin-top:18px">
+          <div class="hof-row" data-to="14"><span class="rk">4</span><div class="avatar" style="width:44px;height:44px;background:linear-gradient(150deg,#064E3B,#0d8a64);font-size:20px">🔬</div><div class="info"><div class="nm">이정호</div><div class="fl">화학·직무전환</div></div><span class="sc">4.8</span></div>
+          <div class="hof-row" data-to="14"><span class="rk">5</span><div class="avatar" style="width:44px;height:44px;background:linear-gradient(150deg,#78350F,#a86a2a);font-size:20px">🪵</div><div class="info"><div class="nm">배기훈</div><div class="fl">목공·복원</div></div><span class="sc">4.8</span></div>
+          <div class="hof-row" data-to="14"><span class="rk">6</span><div class="avatar" style="width:44px;height:44px;background:linear-gradient(150deg,#1E3A5F,#3a6296);font-size:20px">⚙️</div><div class="info"><div class="nm">홍기석</div><div class="fl">설계 R&D</div></div><span class="sc">4.7</span></div>
+        </div>
+      </div>
+      <div class="bottomnav" data-nav="master" data-active="0"></div>
+    </div>
+
+    <!-- ════════ S17 전수 기록 ════════ -->
+    <div class="screen" id="s17">
+      <div class="statusbar light" data-sb></div>
+      <div class="pad" style="padding-top:2px;display:flex;align-items:center;justify-content:space-between">
+        <span class="chat-back" data-to="14" data-dir="back"><svg viewBox="0 0 24 24" width="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span style="color:var(--ink3)"><svg viewBox="0 0 24 24" width="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4" stroke-linecap="round"/></svg></span>
+      </div>
+      <div class="body pad" style="padding-top:10px">
+        <div class="rec2-stat">
+          <div class="rec2-box"><div class="v">312</div><div class="k">총 전수 세션</div></div>
+          <div class="rec2-box"><div class="v">148h</div><div class="k">누적 시간</div></div>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:var(--ink3);margin:18px 0 12px">최근 완료</div>
+        <div class="rec2-row">
+          <div class="avatar" style="width:46px;height:46px;background:linear-gradient(150deg,#5b67f8,#2d3fcc);font-size:22px">🧑‍💻</div>
+          <div class="info"><div class="nm">박지훈 <span>6월 7일</span></div><div class="ds">반도체 면접 4회차</div></div>
+          <span class="rec2-replay" data-to="12"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>다시 보기</span>
+        </div>
+        <div class="rec2-row">
+          <div class="avatar" style="width:46px;height:46px;background:linear-gradient(150deg,#0d8a64,#064E3B);font-size:22px">👩‍🎓</div>
+          <div class="info"><div class="nm">이서연 <span>6월 3일</span></div><div class="ds">이력서 첨삭</div></div>
+          <span class="rec2-replay" data-to="12"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>다시 보기</span>
+        </div>
+        <div class="rec2-row">
+          <div class="avatar" style="width:46px;height:46px;background:linear-gradient(150deg,#92400e,#c47d2a);font-size:22px">🧑‍💼</div>
+          <div class="info"><div class="nm">윤하늘 <span>5월 28일</span></div><div class="ds">직무 전환 상담</div></div>
+          <span class="rec2-replay" data-to="12"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>다시 보기</span>
+        </div>
+      </div>
+      <div class="bottomnav" data-nav="master" data-active="3"></div>
+    </div>
+
+  </div><!-- phone-screen -->
+</div><!-- phone-wrap -->
+
+<div class="flow-dots" id="flowDots"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════ 공통 크롬 (상태바 / 하단탭) 주입 ══════════ */
+const SB = `<span class="time">9:41</span><span class="sb-icons">
+  <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="5" y="4.5" width="3" height="7.5" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+  <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><path d="M8.5 2.5c2.6 0 5 1 6.8 2.7l1.2-1.3C14.3 1.7 11.5.5 8.5.5S2.7 1.7.5 3.9l1.2 1.3C3.5 3.5 5.9 2.5 8.5 2.5z" opacity=".9"/><path d="M8.5 6c1.5 0 2.9.6 3.9 1.6l1.3-1.3C12.3 4.9 10.5 4 8.5 4S4.7 4.9 3.3 6.3l1.3 1.3C5.6 6.6 7 6 8.5 6z" opacity=".9"/><path d="M8.5 9.5l2-2c-.5-.5-1.2-.8-2-.8s-1.5.3-2 .8l2 2z"/></svg>
+  <svg width="26" height="13" viewBox="0 0 26 13" fill="none"><rect x="1" y="1" width="21" height="11" rx="3" stroke="currentColor" stroke-opacity=".5"/><rect x="2.5" y="2.5" width="18" height="8" rx="1.5" fill="currentColor"/><rect x="23.5" y="4" width="1.8" height="5" rx="1" fill="currentColor" fill-opacity=".5"/></svg>
+</span>`;
+document.querySelectorAll('[data-sb]').forEach(el=>el.innerHTML=SB);
+
+const NAV_DEFS = {
+  mentee:[
+    {to:5, label:'홈',   icon:'M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z'},
+    {to:9, label:'검색', icon:'CIRCLE'},
+    {to:10,label:'관심', icon:'M6 4h12v16l-6-4-6 4z'},
+    {to:5, label:'프로필', icon:'PERSON'}
+  ],
+  master:[
+    {to:6, label:'홈',   icon:'M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z'},
+    {to:7, label:'탐색', icon:'CIRCLE'},
+    {to:11,label:'매칭', icon:'M3 7h18v11a2 2 0 01-2 2H5a2 2 0 01-2-2zM3 7l9 6 9-6'},
+    {to:14,label:'프로필', icon:'PERSON'}
+  ]
+};
+function navIcon(d){
+  if(d==='CIRCLE') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg>';
+  if(d==='PERSON') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6" stroke-linecap="round"/></svg>';
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="${d}"/></svg>`;
+}
+document.querySelectorAll('[data-nav]').forEach(nav=>{
+  const defs=NAV_DEFS[nav.dataset.nav];
+  const active=parseInt(nav.dataset.active);
+  nav.innerHTML=defs.map((t,i)=>
+    `<div class="navtab${i===active?' on':''}" data-to="${t.to}">${navIcon(t.icon)}<span>${t.label}</span></div>`
+  ).join('');
+});
+
+/* 음성 파형 막대 */
+function buildWave(el,count,minH){for(let i=0;i<count;i++){const b=document.createElement('i');b.style.height=(minH+Math.random()*(100-minH))+'%';b.style.animationDelay=(i*0.05)+'s';el.appendChild(b);}}
+buildWave(document.getElementById('wave3'),22,20);
+const w4=document.getElementById('wave4');for(let i=0;i<34;i++){const b=document.createElement('i');b.style.height=(20+Math.random()*70)+'%';b.style.animationDelay=(i*0.04)+'s';w4.appendChild(b);}
+
+/* ══════════ 사진 채우기 (실제 인물 사진 — 시니어/청년 구분) ══════════ */
+/* 인물별 고유 이모지 → 사진 매핑. 시니어=마스터, 청년=멘티 */
+const PHOTO_MAP={
+  // 시니어(마스터): 정장=sinior1, 캐주얼/장인=sinior2
+  '👨‍💼':'img/sinior1.jpg', // 강병민 · 전 삼성 상무
+  '📜':'img/sinior1.jpg',   // 문해성 · 한지 장인
+  '⚙️':'img/sinior1.jpg',   // 홍기석 · 전 현대 수석
+  '📊':'img/sinior1.jpg',   // 정만수 · 전 SK 부장
+  '🏺':'img/sinior2.jpg',   // 김순자 · 도예 명장
+  '🔬':'img/sinior2.jpg',   // 이정호 · 전 LG 연구원
+  '🪵':'img/sinior2.jpg',   // 배기훈 · 목공 마스터
+  '👴':'img/sinior1.jpg',   // 역할 선택 · 마스터
+  // 청년(멘티)
+  '🧑‍💻':'img/young_men.jpg',           // 박지훈
+  '👩‍🎓':'img/young_women.jpg',          // 이서연
+  '🧑‍💼':'img/young_women_another.jpg',  // 윤하늘
+  '🧑':'img/young_men.jpg'              // 역할 선택 · 멘티
+};
+const SENIOR_FALLBACK='img/sinior1.jpg', YOUTH_FALLBACK='img/young_men.jpg';
+const MENTEE_EMOJI=new Set(['🧑‍💻','👩‍🎓','🧑‍💼','🧑']);
+const pickPhoto=e=>{e=(e||'').trim();return PHOTO_MAP[e]||(MENTEE_EMOJI.has(e)?YOUTH_FALLBACK:SENIOR_FALLBACK);};
+function applyPhotos(){
+  // 원형 아바타
+  document.querySelectorAll('.avatar').forEach(a=>{
+    if(a.querySelector('.pfc'))return;
+    const badge=a.querySelector('.vbadge');
+    const emoji=[...a.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim();
+    if(!emoji)return;
+    a.innerHTML='<img class="pfc" src="'+pickPhoto(emoji)+'" alt="">'+(badge?badge.outerHTML:'');
+  });
+  // 역할 카드 얼굴
+  document.querySelectorAll('.role-face').forEach(r=>{
+    if(r.querySelector('img'))return;
+    r.innerHTML='<img class="pfr" src="'+pickPhoto(r.textContent)+'" alt="">';
+  });
+  // 큰 사진 영역 (피처드/관심/오늘의 멘티)
+  const swap=(host,re)=>{const b=[...host.children].find(c=>re.test(c.getAttribute('style')||''));if(b){b.outerHTML='<img class="pfr" src="'+pickPhoto(b.textContent)+'" alt="">';}};
+  document.querySelectorAll('.feat-photo').forEach(p=>swap(p,/font-size:96px/));
+  document.querySelectorAll('.fav-photo').forEach(p=>swap(p,/font-size:44px/));
+  document.querySelectorAll('.mc-emoji').forEach(m=>{m.outerHTML='<img class="pfr" src="'+pickPhoto(m.textContent)+'" alt="">';});
+}
+applyPhotos();
+
+/* ══════════ 화면 네비게이션 ══════════ */
+const NAMES={1:'스플래시',2:'역할 선택',3:'AI 온보딩',4:'음성 녹음',5:'홈 · 멘티',6:'오늘의 멘티',7:'분야별 마스터',8:'마스터 탐색',9:'대화형 검색',10:'관심 목록',11:'매칭 박스',12:'대화',13:'협약 체결',14:'마스터 대시보드',15:'이 달의 전수',16:'명예의 전당',17:'전수 기록'};
+let role='mentee', cur=1, hist=[1], busy=false;
+const visited=new Set([1]);
+
+const dotsEl=document.getElementById('flowDots');
+for(let i=1;i<=17;i++){const d=document.createElement('div');d.className='dot'+(i===1?' current':'');d.id='dot'+i;d.title=NAMES[i];dotsEl.appendChild(d);}
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._tid);t._tid=setTimeout(()=>t.classList.remove('show'),1800);}
+
+function updateUI(){
+  document.getElementById('badgeScreen').textContent=`${NAMES[cur]} · ${cur}/17`;
+  const rb=document.getElementById('badgeRole');
+  if(role==='master'){rb.textContent='마스터 모드';rb.className='badge badge-role master';}
+  else{rb.textContent='멘티 모드';rb.className='badge badge-role';}
+  for(let i=1;i<=17;i++){const d=document.getElementById('dot'+i);d.className='dot'+(i===cur?' current':visited.has(i)?' visited':'');}
+}
+
+function goTo(target,direction){
+  if(busy||target===cur)return;
+  const fromEl=document.getElementById('s'+cur), toEl=document.getElementById('s'+target);
+  if(!toEl)return;
+  busy=true;
+  ['anim-inR','anim-inL','anim-outL','anim-outR'].forEach(c=>{fromEl.classList.remove(c);toEl.classList.remove(c);});
+  toEl.style.display='flex';void toEl.offsetWidth;
+  const back=(direction==='back');
+  fromEl.classList.add(back?'anim-outR':'anim-outL');
+  toEl.classList.add(back?'anim-inL':'anim-inR');
+  const tb=toEl.querySelector('.body'); if(tb) tb.scrollTop=0;
+  setTimeout(()=>{
+    fromEl.classList.remove('anim-outR','anim-outL','active');fromEl.style.display='none';
+    toEl.classList.remove('anim-inL','anim-inR');toEl.classList.add('active');
+    hist.push(target);cur=target;visited.add(cur);updateUI();busy=false;
+  },320);
+}
+
+function restart(){
+  document.querySelectorAll('.screen').forEach(s=>{['anim-inR','anim-inL','anim-outL','anim-outR','active'].forEach(c=>s.classList.remove(c));s.style.display='none';});
+  const s1=document.getElementById('s1');s1.style.display='flex';s1.classList.add('active');
+  cur=1;role='mentee';hist=[1];visited.clear();visited.add(1);busy=false;exitSwipeMode();updateUI();
+}
+
+document.querySelectorAll('[data-to]').forEach(el=>{
+  el.addEventListener('click',e=>{
+    if(busy)return;
+    e.stopPropagation();
+    const rawTo=el.dataset.to, rawDir=el.dataset.dir||'forward', rawRole=el.dataset.role;
+    if(rawRole) role=rawRole;
+    let target,direction=rawDir;
+    if(rawTo==='ROLE_HOME'){target=role==='master'?6:5;}
+    else if(rawTo==='AGREE_DONE'){showToast('협약이 체결되었어요! 🎉');target=role==='master'?14:5;}
+    else if(rawTo==='BACK'){direction='back';hist.pop();target=hist.length>0?hist[hist.length-1]:1;hist.pop();}
+    else{target=parseInt(rawTo);}
+    if(target)goTo(target,direction);
+  });
+});
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft'&&hist.length>1){hist.pop();const prev=hist.length>0?hist[hist.length-1]:1;hist.pop();goTo(prev,'back');}
+});
+
+/* ══════════ S10 스와이프 카드 ══════════ */
+const MASTERS=[
+  {name:'강병민',role:'전 삼성전자 상무',field:'반도체 R&D',years:31,rating:4.9,type:'온라인·오프라인',color:'#1E3A8A',emoji:'👨‍💼',tags:['이력서 첨삭','면접 준비','커리어 설계']},
+  {name:'김순자',role:'도예 명장',field:'전통 도예',years:40,rating:4.9,type:'오프라인',color:'#7C2D12',emoji:'🏺',tags:['전통 도예','무형문화재','핸드메이드']},
+  {name:'이정호',role:'전 LG 연구원',field:'화학·직무전환',years:28,rating:4.8,type:'온라인',color:'#064E3B',emoji:'🔬',tags:['직무전환','이력서','커리어 상담']},
+  {name:'문해성',role:'한지 장인',field:'무형문화재 이수',years:35,rating:5.0,type:'오프라인',color:'#4C1D95',emoji:'📜',tags:['한지 공예','전통 문화','수공예']},
+  {name:'배기훈',role:'목공 마스터',field:'가구 수선·복원',years:30,rating:4.8,type:'오프라인',color:'#78350F',emoji:'🪵',tags:['목공예','가구 복원','수납 설계']},
+  {name:'홍기석',role:'전 현대 수석',field:'설계·R&D',years:30,rating:4.7,type:'오프라인',color:'#1E3A5F',emoji:'⚙️',tags:['기계 설계','특허','R&D 전략']}
+];
+let swipeIndex=0,isDragging=false,startX=0,startY=0,curX=0,curY=0,activeCard=null;
+
+function enterSwipeMode(idx){
+  swipeIndex=idx||0;
+  document.getElementById('s10-swipe').classList.add('active');
+  hideEmptyState();renderCards();
+}
+function exitSwipeMode(){
+  const o=document.getElementById('s10-swipe');if(o)o.classList.remove('active');
+  const area=document.getElementById('cardStackArea');if(area)area.querySelectorAll('.master-card').forEach(c=>c.remove());
+}
+
+function createCard(m,z,isTop){
+  const card=document.createElement('div');
+  card.className='master-card';card.style.zIndex=z;
+  if(!isTop){card.style.transform='scale(0.94) translateY(16px)';card.style.pointerEvents='none';}
+  const tags=m.tags.map(t=>`<span class="tag">${t}</span>`).join('');
+  card.innerHTML=`
+    <div class="card-banner" style="background:linear-gradient(150deg,${m.color},${m.color}cc)">
+      <div class="card-avatar"><img class="pfc" src="${pickPhoto(m.emoji)}" alt=""></div>
+      <div class="card-verified"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+      <div class="card-hint card-hint-like">세션신청</div>
+      <div class="card-hint card-hint-nope">패스</div>
+    </div>
+    <div class="card-body">
+      <div class="card-name">${m.name}</div>
+      <div class="card-role">${m.role}</div>
+      <div class="card-meta"><span>📍 ${m.type}</span><span>⏱ ${m.years}년 경력</span><span><b>★ ${m.rating}</b></span></div>
+      <div class="card-tags">${tags}</div>
+    </div>`;
+  if(isTop){card.addEventListener('mousedown',e=>onDragStart(e,card));card.addEventListener('touchstart',e=>onDragStart(e,card),{passive:false});}
+  return card;
+}
+
+function renderCards(){
+  const area=document.getElementById('cardStackArea');
+  area.querySelectorAll('.master-card').forEach(c=>c.remove());
+  const rem=MASTERS.slice(swipeIndex);
+  document.getElementById('cardCounter').textContent=rem.length>0?`${swipeIndex+1} / ${MASTERS.length}`:'';
+  if(rem.length===0){showEmptyState();return;}
+  if(rem.length>2){const c3=createCard(rem[2],1,false);c3.style.transform='scale(0.88) translateY(30px)';area.appendChild(c3);}
+  if(rem.length>1){area.appendChild(createCard(rem[1],2,false));}
+  const top=createCard(rem[0],10,true);area.appendChild(top);activeCard=top;
+}
+function showEmptyState(){document.getElementById('emptyState').style.display='flex';document.getElementById('swipeActions').style.display='none';document.getElementById('cardStackArea').style.display='none';}
+function hideEmptyState(){document.getElementById('emptyState').style.display='none';document.getElementById('swipeActions').style.display='flex';document.getElementById('cardStackArea').style.display='flex';}
+function resetSwipeCards(){swipeIndex=0;hideEmptyState();renderCards();}
+
+function onDragStart(e,card){
+  if(e.type==='touchstart'){startX=e.touches[0].clientX;startY=e.touches[0].clientY;}
+  else{startX=e.clientX;startY=e.clientY;e.preventDefault();}
+  isDragging=true;activeCard=card;card.style.transition='none';
+  document.addEventListener('mousemove',onDragMove);document.addEventListener('mouseup',onDragEnd);
+  document.addEventListener('touchmove',onDragMove,{passive:false});document.addEventListener('touchend',onDragEnd);
+}
+function onDragMove(e){
+  if(!isDragging||!activeCard)return;
+  let cx,cy;
+  if(e.type==='touchmove'){cx=e.touches[0].clientX;cy=e.touches[0].clientY;e.preventDefault();}
+  else{cx=e.clientX;cy=e.clientY;}
+  curX=cx-startX;curY=(cy-startY)*0.35;
+  activeCard.style.transform=`translate(${curX}px,${curY}px) rotate(${curX*0.06}deg)`;
+  const like=activeCard.querySelector('.card-hint-like'),nope=activeCard.querySelector('.card-hint-nope');
+  if(curX>0){like.style.opacity=Math.min(curX/100,1);nope.style.opacity=0;}
+  else{nope.style.opacity=Math.min(-curX/100,1);like.style.opacity=0;}
+}
+function onDragEnd(){
+  if(!isDragging||!activeCard)return;isDragging=false;
+  document.removeEventListener('mousemove',onDragMove);document.removeEventListener('mouseup',onDragEnd);
+  document.removeEventListener('touchmove',onDragMove);document.removeEventListener('touchend',onDragEnd);
+  const threshold=95;
+  if(curX>threshold){flyOut('right',()=>commitSwipe('session'));}
+  else if(curX<-threshold){flyOut('left',()=>commitSwipe('skip'));}
+  else{activeCard.style.transition='transform .3s cubic-bezier(.2,.8,.3,1)';activeCard.style.transform='';
+    const l=activeCard.querySelector('.card-hint-like'),n=activeCard.querySelector('.card-hint-nope');if(l)l.style.opacity=0;if(n)n.style.opacity=0;}
+  curX=0;curY=0;
+}
+function flyOut(dir,cb){
+  if(!activeCard)return;
+  activeCard.style.transition='transform .4s ease-out, opacity .4s ease-out';
+  const x=dir==='right'?600:-600;
+  activeCard.style.transform=`translate(${x}px,${curY}px) rotate(${dir==='right'?40:-40}deg)`;
+  activeCard.style.opacity='0';
+  setTimeout(cb,300);
+}
+function commitSwipe(action){
+  if(action==='session'){showToast('세션을 신청했어요! 🎉');setTimeout(()=>{exitSwipeMode();goTo(13,'forward');},700);return;}
+  swipeIndex++;renderCards();
+}
+function swipeCard(action){
+  if(!activeCard&&action!=='session')return;
+  if(action==='session'){curY=0;flyOut('right',()=>commitSwipe('session'));}
+  else if(action==='skip'){curY=0;flyOut('left',()=>commitSwipe('skip'));}
+  else if(action==='save'){showToast('이미 관심 목록에 있어요 ⭐');curY=0;flyOut('right',()=>{swipeIndex++;renderCards();});}
+}
+
+updateUI();
+</script>
+</body>
+</html>
